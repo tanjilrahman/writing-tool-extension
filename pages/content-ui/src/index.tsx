@@ -1,34 +1,74 @@
+import React from 'react';
 import { createRoot } from 'react-dom/client';
-import App from '@src/App';
+import { WritingAssistant } from './components/WritingAssistant';
 // @ts-expect-error Because file doesn't exist before build
 import tailwindcssOutput from '../dist/tailwind-output.css?inline';
 
-const root = document.createElement('div');
-root.id = 'chrome-extension-boilerplate-react-vite-content-view-root';
+const GMAIL_COMPOSE_SELECTOR = '.Am.Al.editable';
 
-document.body.append(root);
+function init() {
+  // Only initialize on Gmail
+  if (!window.location.href.includes('mail.google.com')) {
+    return;
+  }
 
-const rootIntoShadow = document.createElement('div');
-rootIntoShadow.id = 'shadow-root';
+  console.log('Writing Assistant: Initializing on Gmail');
 
-const shadowRoot = root.attachShadow({ mode: 'open' });
-
-if (navigator.userAgent.includes('Firefox')) {
-  /**
-   * In the firefox environment, adoptedStyleSheets cannot be used due to the bug
-   * @url https://bugzilla.mozilla.org/show_bug.cgi?id=1770592
-   *
-   * Injecting styles into the document, this may cause style conflicts with the host page
-   */
+  // Add styles without shadow DOM to avoid isolation issues
   const styleElement = document.createElement('style');
-  styleElement.innerHTML = tailwindcssOutput;
-  shadowRoot.appendChild(styleElement);
-} else {
-  /** Inject styles into shadow dom */
-  const globalStyleSheet = new CSSStyleSheet();
-  globalStyleSheet.replaceSync(tailwindcssOutput);
-  shadowRoot.adoptedStyleSheets = [globalStyleSheet];
+  styleElement.innerHTML = `
+    ${tailwindcssOutput}
+    #writing-assistant-root {
+      position: fixed;
+      z-index: 1000;
+      pointer-events: none;
+    }
+    #writing-assistant-root > * {
+      pointer-events: auto;
+    }
+  `;
+  document.head.appendChild(styleElement);
+
+  // Create container for our app
+  const root = document.createElement('div');
+  root.id = 'writing-assistant-root';
+  document.body.appendChild(root);
+
+  let reactRoot: ReturnType<typeof createRoot> | null = null;
+
+  // Create MutationObserver to detect Gmail compose elements
+  const observer = new MutationObserver(() => {
+    const composeElements = document.querySelectorAll(GMAIL_COMPOSE_SELECTOR);
+    console.log('Writing Assistant: Found compose elements:', composeElements.length);
+
+    if (composeElements.length > 0) {
+      if (!reactRoot) {
+        console.log('Writing Assistant: Creating React root');
+        reactRoot = createRoot(root);
+      }
+
+      reactRoot.render(
+        <React.StrictMode>
+          {Array.from(composeElements).map((element, index) => (
+            <WritingAssistant key={index} composeElement={element} />
+          ))}
+        </React.StrictMode>,
+      );
+    } else if (reactRoot) {
+      console.log('Writing Assistant: Unmounting React root');
+      reactRoot.unmount();
+      reactRoot = null;
+    }
+  });
+
+  // Start observing the document
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+  });
+
+  // Initial check for compose elements
+  observer.takeRecords();
 }
 
-shadowRoot.appendChild(rootIntoShadow);
-createRoot(rootIntoShadow).render(<App />);
+init();

@@ -32,13 +32,14 @@
     "lint:fix": "turbo lint:fix --continue -- --fix --cache --cache-location node_modules/.cache/.eslintcache",
     "prettier": "turbo prettier --continue -- --cache --cache-location node_modules/.cache/.prettiercache",
     "prepare": "husky",
-    "update-version": "bash bash-scripts/update_version.sh",
-    "copy_env": "bash bash-scripts/copy_env.sh",
-    "set-global-env": "bash bash-scripts/set_global_env.sh",
+    "update-version": "powershell -File ps-scripts/update_version.ps1",
+    "copy_env": "powershell -File ps-scripts/copy_env.ps1",
+    "set-global-env": "powershell -File ps-scripts/set_global_env.ps1",
     "postinstall": "pnpm build:eslint && pnpm copy_env",
     "module-manager": "pnpm -F module-manager start"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.2.0",
     "react": "19.0.0",
     "react-dom": "19.0.0"
   },

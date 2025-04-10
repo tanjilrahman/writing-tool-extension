@@ -29,7 +29,7 @@ const manifest = {
   },
   version: packageJson.version,
   description: '__MSG_extensionDescription__',
-  host_permissions: ['<all_urls>'],
+  host_permissions: ['<all_urls>', '*://mail.google.com/*'],
   permissions: ['storage', 'scripting', 'tabs', 'notifications', 'sidePanel'],
   options_page: 'options/index.html',
   background: {
@@ -48,15 +48,15 @@ const manifest = {
   },
   content_scripts: [
     {
-      matches: ['http://*/*', 'https://*/*', '<all_urls>'],
+      matches: ['*://mail.google.com/*'],
       js: ['content/index.iife.js'],
     },
     {
-      matches: ['http://*/*', 'https://*/*', '<all_urls>'],
+      matches: ['*://mail.google.com/*'],
       js: ['content-ui/index.iife.js'],
     },
     {
-      matches: ['http://*/*', 'https://*/*', '<all_urls>'],
+      matches: ['*://mail.google.com/*'],
       css: ['content.css'],
     },
   ],
