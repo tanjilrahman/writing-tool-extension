@@ -1,9 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-
-interface Suggestion {
-  rewrite: string;
-  style: string;
-}
+import { Suggestion, WritingStyle } from '../types/suggestion';
 
 const styles = {
   casual: 'relaxed, everyday language with contractions and simple words',
@@ -13,7 +9,7 @@ const styles = {
   persuasive: 'compelling language that drives action',
 };
 
-export async function analyzeSentence(text: string, apiKey: string, style: keyof typeof styles): Promise<Suggestion[]> {
+export async function analyzeSentence(text: string, apiKey: string, style: WritingStyle): Promise<Suggestion[]> {
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({

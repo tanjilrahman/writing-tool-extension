@@ -1,9 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-
-interface Suggestion {
-  rewrite: string;
-  style: string;
-}
+import { Suggestion } from '../../types/suggestion';
 
 interface SuggestionPopupProps {
   suggestions: Suggestion[];
