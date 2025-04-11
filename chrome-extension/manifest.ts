@@ -51,10 +51,12 @@ const manifest = {
       matches: ['<all_urls>'],
       js: ['content-ui/index.iife.js'],
       css: ['content.css'],
+      all_frames: true,
     },
     {
       matches: ['*://mail.google.com/*'],
       js: ['content/index.iife.js'],
+      all_frames: true,
     },
   ],
   devtools_page: 'devtools/index.html',
