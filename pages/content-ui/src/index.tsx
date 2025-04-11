@@ -18,47 +18,33 @@ function init() {
   const styleElement = document.createElement('style');
   styleElement.innerHTML = `
     ${tailwindcssOutput}
-    #writing-assistant-root {
-      position: fixed;
+    .writing-assistant-container {
+      position: relative;
       z-index: 1000;
-      pointer-events: none;
-    }
-    #writing-assistant-root > * {
-      pointer-events: auto;
     }
   `;
   document.head.appendChild(styleElement);
-
-  // Create container for our app
-  const root = document.createElement('div');
-  root.id = 'writing-assistant-root';
-  document.body.appendChild(root);
-
-  let reactRoot: ReturnType<typeof createRoot> | null = null;
 
   // Create MutationObserver to detect Gmail compose elements
   const observer = new MutationObserver(() => {
     const composeElements = document.querySelectorAll(GMAIL_COMPOSE_SELECTOR);
     console.log('Writing Assistant: Found compose elements:', composeElements.length);
 
-    if (composeElements.length > 0) {
-      if (!reactRoot) {
-        console.log('Writing Assistant: Creating React root');
-        reactRoot = createRoot(root);
-      }
+    composeElements.forEach(composeElement => {
+      // Check if we already added the writing assistant to this compose element
+      if (!composeElement.parentElement?.querySelector('.writing-assistant-container')) {
+        const container = document.createElement('div');
+        container.className = 'writing-assistant-container';
+        composeElement.parentElement?.appendChild(container);
 
-      reactRoot.render(
-        <React.StrictMode>
-          {Array.from(composeElements).map((element, index) => (
-            <WritingAssistant key={index} composeElement={element} />
-          ))}
-        </React.StrictMode>,
-      );
-    } else if (reactRoot) {
-      console.log('Writing Assistant: Unmounting React root');
-      reactRoot.unmount();
-      reactRoot = null;
-    }
+        const root = createRoot(container);
+        root.render(
+          <React.StrictMode>
+            <WritingAssistant composeElement={composeElement} />
+          </React.StrictMode>,
+        );
+      }
+    });
   });
 
   // Start observing the document
