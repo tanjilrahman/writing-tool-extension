@@ -16,84 +16,94 @@ export function EmailResponseGenerator({ composeElement, apiKey }: EmailResponse
 
   const getEmailThread = (): string => {
     let thread = '';
-    console.log('Compose element:', composeElement); // Debug log
+    console.log('Starting email thread extraction...'); // Debug log
 
-    // First get the current draft
-    const currentText = composeElement.querySelector('[role="textbox"]')?.textContent?.trim() || '';
-    if (currentText) {
-      thread += 'Current Draft:\n' + currentText + '\n\n';
-    }
+    // Find the email thread container
+    const threadContainer = composeElement.closest('.ii.gt') || document.querySelector('.ii.gt');
 
-    // Find the email thread container by traversing up
-    // The thread container is typically several levels above the compose element
-    let threadContainer = composeElement
-      .closest('.aA6') // Compose view container
-      ?.closest('.ii.gt') // Email view container
-      ?.closest('.g3'); // Full thread container
-
-    console.log('Thread container found:', threadContainer); // Debug log
-
-    if (!threadContainer) {
-      // Try alternative selectors if the above didn't work
-      threadContainer =
-        composeElement.closest('.ii.gt') || // Try finding just the email view
-        composeElement.closest('.iN') || // Another possible container
-        composeElement.closest('.gs'); // Yet another container type
-      console.log('Alternative thread container found:', threadContainer);
-    }
+    console.log('Thread container found:', threadContainer);
 
     if (threadContainer) {
-      // Get all email content divs in the thread
-      const emailDivs = Array.from(threadContainer.querySelectorAll('.a3s.aiL'));
-      console.log('Found email divs:', emailDivs.length); // Debug log
+      // Function to extract email parts from text
+      const extractEmails = (text: string): string[] => {
+        const emails: string[] = [];
 
-      emailDivs.forEach((emailDiv, index) => {
-        // Skip if this is the compose box itself
-        if (composeElement.contains(emailDiv)) return;
+        // Split by "On ... wrote:" pattern
+        const parts = text.split(/On .+? wrote:/g);
 
-        // Get the email content
-        const emailText = emailDiv.textContent?.trim() || '';
-        if (!emailText || thread.includes(emailText)) return;
+        if (parts.length > 1) {
+          // First part might be empty or contain the latest email
+          if (parts[0].trim()) {
+            emails.push(parts[0].trim());
+          }
 
-        // Try to find the attribution line for this email
-        const attribution = emailDiv.closest('.gs')?.querySelector('.gI, .g3, .adO')?.textContent?.trim();
-        if (attribution) {
-          thread += attribution + '\n';
+          // Process remaining parts
+          for (let i = 1; i < parts.length; i++) {
+            const part = parts[i].trim();
+            if (part) {
+              emails.push(part);
+            }
+          }
+        } else {
+          // If no splits found, treat as single email
+          emails.push(text.trim());
         }
 
-        thread += `Previous Email ${emailDivs.length - index}:\n${emailText}\n\n`;
+        return emails;
+      };
+
+      // Get all email content blocks
+      const emailBlocks = Array.from(threadContainer.querySelectorAll('.a3s.aiL')).filter(
+        block => !composeElement.contains(block),
+      );
+
+      console.log('Found email blocks:', emailBlocks.length);
+
+      emailBlocks.forEach(block => {
+        const fullText = block.textContent?.trim() || '';
+        if (!fullText) return;
+
+        // Get sender info if available
+        const senderInfo = block.closest('.gs')?.querySelector('.gE.iv.gt')?.textContent?.trim();
+
+        // Extract individual emails from the text
+        const emails = extractEmails(fullText);
+        console.log('Extracted emails from block:', emails.length);
+
+        // Reverse the order of emails to maintain chronological order (most recent first)
+        emails.reverse().forEach((emailContent, index) => {
+          // Skip if this content is already included
+          if (thread.includes(emailContent)) return;
+
+          // Try to find a matching sender line in the email content
+          const senderMatch = emailContent.match(/^(From|By|Sent by):?\s*([^\n]+)/i);
+          const sender = senderMatch?.[2]?.trim() || senderInfo || '';
+
+          if (sender) {
+            thread += `Previous Email ${index + 1}:\nFrom: ${sender}\n`;
+          }
+          thread += `Content:\n${emailContent.trim()}\n\n`;
+        });
       });
 
-      // If we still haven't found any content, try one more approach
+      // If no emails found, try one more approach with the most recent email
       if (!thread.includes('Previous Email')) {
-        // Look for quoted content sections
-        const quotedSections = threadContainer.querySelectorAll('.gmail_quote, .gmail_extra, blockquote');
-        console.log('Found quoted sections:', quotedSections.length); // Debug log
-
-        quotedSections.forEach((section, index) => {
-          const text = section.textContent?.trim() || '';
-          if (text && !thread.includes(text)) {
-            thread += `Previous Email ${index + 1}:\n${text}\n\n`;
+        const recentBlock = threadContainer.querySelector('.a3s.aiL:not(.gmail_quote)');
+        if (recentBlock && !composeElement.contains(recentBlock)) {
+          const text = recentBlock.textContent?.trim() || '';
+          if (text) {
+            const sender = threadContainer.querySelector('.gE.iv.gt')?.textContent?.trim() || '';
+            if (sender) {
+              thread += `Previous Email 1:\nFrom: ${sender}\n`;
+            }
+            thread += `Content:\n${text}\n\n`;
           }
-        });
+        }
       }
     }
 
-    // If we still don't have any previous emails, try one final approach
-    if (!thread.includes('Previous Email')) {
-      // Look for any quoted content in the compose element itself
-      const quotes = composeElement.querySelectorAll('.gmail_quote, blockquote, .gmail_extra');
-      console.log('Fallback: found quotes in compose element:', quotes.length); // Debug log
-
-      quotes.forEach((quote, index) => {
-        const text = quote.textContent?.trim() || '';
-        if (text && !thread.includes(text)) {
-          thread += `Previous Email ${index + 1}:\n${text}\n\n`;
-        }
-      });
-    }
-
-    console.log('Final extracted thread:', thread); // Debug log
+    // Log the final result
+    console.log('Final thread content:', thread || 'No email thread found');
     return thread || 'No email thread found';
   };
 
