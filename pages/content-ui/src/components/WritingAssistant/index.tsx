@@ -15,7 +15,7 @@ const geminiStorage = createStorage<string>('gemini-api-key', '', {
 
 const writingStyles: { value: WritingStyle; label: string; description: string }[] = [
   { value: 'casual', label: 'Casual', description: 'Casual, friendly, human like' },
-  { value: 'formal', label: 'Formal', description: 'Professional and structured' },
+  { value: 'proofread', label: 'Proofread', description: 'Proofread the text for any errors' },
   { value: 'professional', label: 'Professional', description: 'Business-appropriate tone' },
   { value: 'persuasive', label: 'Persuasive', description: 'Convincing and impactful' },
 ];
@@ -48,7 +48,7 @@ export function WritingAssistant() {
       const position = {
         top:
           spaceBelow < buttonHeight
-            ? rect.top + window.scrollY - buttonHeight - 10 // 10px padding above selection
+            ? rect.top + window.scrollY - buttonHeight // 0px padding above selection
             : rect.bottom + window.scrollY + 10, // 10px padding below selection
         left: Math.max(10, Math.min(rect.left + window.scrollX, window.innerWidth - 100)), // Ensure button is visible
       };
@@ -139,7 +139,7 @@ export function WritingAssistant() {
             top: buttonPosition.top,
             left: buttonPosition.left,
             zIndex: 9999,
-            padding: '4px',
+            padding: '2px',
           }}>
           <button
             onClick={e => {
@@ -147,7 +147,7 @@ export function WritingAssistant() {
               e.stopPropagation();
               setShowStyleSelector(!showStyleSelector);
             }}
-            className={`p-2 rounded-full transition-colors ${
+            className={`p-1 rounded-full transition-colors ${
               showStyleSelector ? 'bg-purple-100 text-purple-700' : 'text-gray-700 hover:bg-gray-50'
             }`}>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -162,7 +162,7 @@ export function WritingAssistant() {
 
           <button
             onClick={handleButtonClick}
-            className="p-2 rounded-full bg-purple-600 hover:bg-purple-700 text-white transition-colors"
+            className="p-1 rounded-full bg-purple-600 hover:bg-purple-700 text-white transition-colors"
             disabled={!selectedText.trim() || isAnalyzing}>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -215,7 +215,22 @@ export function WritingAssistant() {
                       e.stopPropagation();
                       setSelectedStyle(style.value);
                       setShowStyleSelector(false);
-                      if (selectedText) analyzeText();
+                      if (selectedText) {
+                        setIsAnalyzing(true);
+                        analyzeSentence(selectedText, apiKey!, style.value)
+                          .then(analysis => {
+                            if (analysis && analysis.length > 0) {
+                              setSuggestions(analysis);
+                            }
+                          })
+                          .catch(error => {
+                            console.error('Error analyzing text:', error);
+                            setSuggestions([]);
+                          })
+                          .finally(() => {
+                            setIsAnalyzing(false);
+                          });
+                      }
                     }}
                     className={`w-full px-3 py-2 rounded-md text-left transition-colors ${
                       selectedStyle === style.value ? 'bg-purple-50 text-purple-700' : 'text-gray-700 hover:bg-gray-50'
@@ -235,7 +250,7 @@ export function WritingAssistant() {
                             />
                           </svg>
                         )}
-                        {style.value === 'formal' && (
+                        {style.value === 'proofread' && (
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path
                               strokeLinecap="round"
@@ -283,6 +298,7 @@ export function WritingAssistant() {
         <SuggestionPopup
           suggestions={suggestions}
           targetElement={document.body}
+          selectedStyle={selectedStyle}
           onApplySuggestion={(original, replacement) => {
             if (selectionRange) {
               selectionRange.deleteContents();

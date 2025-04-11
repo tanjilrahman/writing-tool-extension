@@ -3,7 +3,8 @@ import { Suggestion, WritingStyle } from '../types/suggestion';
 
 const styles = {
   casual: 'Casual, friendly, human like, everyday language with contractions and simple words',
-  formal: 'Structured, proper, business-appropriate language that is clear and direct',
+  proofread:
+    'Proofread the text for any errors and make sure it is grammatically correct. Do not change the meaning of the text.',
   professional: "Business-appropriate language that's clear and direct",
   persuasive: 'Compelling language that drives action',
 };
@@ -14,24 +15,36 @@ export async function analyzeSentence(text: string, apiKey: string, style: Writi
     const model = genAI.getGenerativeModel({
       model: 'gemini-2.0-flash',
       generationConfig: {
-        temperature: 0.7,
-        topP: 0.8,
+        temperature: style === 'proofread' ? 0.1 : 0.7,
+        topP: style === 'proofread' ? 0.5 : 0.8,
         topK: 40,
         maxOutputTokens: 1024,
       },
     });
 
-    const prompt = `You are a professional writing assistant. Your task is to improve the given text by making it more ${styles[style]}. 
-    
-Provide 3 alternative versions that maintain the core message but improve clarity and impact. Return ONLY a JSON array of objects with the following structure:
-    {
-      "rewrite": "the improved version",
-      "style": "${style}"
-    }
+    const basePrompt =
+      style === 'proofread'
+        ? `You are a professional proofreader. Review the text for grammar, spelling, and punctuation errors only.
+         Make minimal changes to fix these errors while preserving the exact meaning, tone, and style of the original text.
+         If the text is already correct, return it unchanged.
+         Return ONLY a JSON array with a single object using this structure:
+         {
+           "rewrite": "the corrected version",
+           "style": "proofread"
+         }
+         
+         Text to proofread: "${text}"`
+        : `You are a professional writing assistant. Your task is to improve the given text by making it more ${styles[style]}. 
+         
+         Provide 3 alternative versions that maintain the core message but improve clarity and impact. Return ONLY a JSON array of objects with the following structure:
+         {
+           "rewrite": "the improved version",
+           "style": "${style}"
+         }
+         
+         Text to improve: "${text}"`;
 
-Text to improve: "${text}"`;
-
-    const result = await model.generateContent(prompt);
+    const result = await model.generateContent(basePrompt);
     const response = await result.response;
     let responseText = response.text();
 

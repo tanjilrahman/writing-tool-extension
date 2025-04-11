@@ -5,9 +5,15 @@ interface SuggestionPopupProps {
   suggestions: Suggestion[];
   targetElement: HTMLElement;
   onApplySuggestion: (original: string, replacement: string) => void;
+  selectedStyle?: string;
 }
 
-export function SuggestionPopup({ suggestions, targetElement, onApplySuggestion }: SuggestionPopupProps) {
+export function SuggestionPopup({
+  suggestions,
+  targetElement,
+  onApplySuggestion,
+  selectedStyle,
+}: SuggestionPopupProps) {
   const [position, setPosition] = useState(() => {
     // Set initial position based on current selection
     const selection = window.getSelection();
@@ -113,7 +119,9 @@ export function SuggestionPopup({ suggestions, targetElement, onApplySuggestion 
       }}>
       <div className="flex flex-col">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-medium text-gray-700">Improve clarity</span>
+          <span className="text-sm font-medium text-gray-700">
+            {selectedStyle ? selectedStyle.charAt(0).toUpperCase() + selectedStyle.slice(1) : 'Improve clarity'}
+          </span>
           <span className="text-xs text-gray-500">
             {currentIndex + 1} of {suggestions.length}
           </span>

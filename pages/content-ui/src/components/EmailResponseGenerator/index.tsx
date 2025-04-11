@@ -42,7 +42,7 @@ export function EmailResponseGenerator({ composeElement, apiKey }: EmailResponse
     try {
       setIsLoading(true);
       setError(null);
-      const thread = composeElement.textContent ?? '';
+      const thread = getEmailThread();
       if (!apiKey) {
         throw new Error('API key is required');
       }
@@ -361,8 +361,8 @@ export function EmailResponseGenerator({ composeElement, apiKey }: EmailResponse
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm text-gray-800 truncate">{type.type}</div>
-                        <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{type.description}</p>
+                        <div className="font-medium text-sm text-gray-800">{type.type}</div>
+                        <p className="text-xs text-gray-500 mt-0.5">{type.description}</p>
                       </div>
                       {isGenerating && (
                         <div className="flex-shrink-0">

@@ -22,18 +22,18 @@ export async function analyzeEmailThread(thread: string, apiKey: string): Promis
 
     const prompt = `You are an email assistant. Analyze the following email thread and suggest possible types of responses that would be appropriate. Consider the context, tone, and content of the conversation.
 
-You must respond with ONLY a JSON array of objects. Do not include any other text or explanation.
-The response must be valid JSON that can be parsed, with this exact structure:
-[
-  {
-    "type": "brief name of response type",
-    "description": "short description of what this response would entail"
-  }
-]
+    You must respond with ONLY a JSON array of objects. Do not include any other text or explanation.
+    The response must be valid JSON that can be parsed, with this exact structure:
+    [
+      {
+        "type": "brief name of response type",
+        "description": "short description of what this response would entail"
+      }
+    ]
 
-Limit to 3-4 most relevant response types. Here is the email thread to analyze:
+    Limit to 3-4 most relevant response types. Here is the email thread to analyze:
 
-${thread}`;
+    ${thread}`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
@@ -71,7 +71,7 @@ ${thread}`;
         console.error('No valid suggestions found in response:', responseText);
         throw new Error('No valid suggestions in response');
       }
-
+      console.log('Valid suggestions:', validSuggestions);
       return validSuggestions;
     } catch (error) {
       console.error('Failed to parse response:', error);
@@ -103,12 +103,12 @@ export async function generateEmailResponse(
 
     const prompt = `You are an email assistant. Generate a response to the following email thread. The response should be a ${responseType.type} type response, which means: ${responseType.description}
 
-Keep the response professional, relevant, and maintain appropriate tone based on the conversation history.
+    Keep the response professional, relevant, and maintain appropriate tone based on the conversation history.
 
-Email thread:
-${thread}
+    Email thread:
+    ${thread}
 
-Generate ONLY the response text, without any explanation or formatting.`;
+    Generate ONLY the response text, without any explanation, without any formatting (no bold, no italic, no code blocks).`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
