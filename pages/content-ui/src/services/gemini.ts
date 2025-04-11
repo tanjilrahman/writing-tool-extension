@@ -5,7 +5,6 @@ const styles = {
   casual: 'Casual, friendly, human like, everyday language with contractions and simple words',
   formal: 'Structured, proper, business-appropriate language that is clear and direct',
   professional: "Business-appropriate language that's clear and direct",
-  friendly: 'Warm, approachable language with a personal touch',
   persuasive: 'Compelling language that drives action',
 };
 

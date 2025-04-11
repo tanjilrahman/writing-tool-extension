@@ -291,9 +291,6 @@ export function EmailResponseGenerator({ composeElement, apiKey }: EmailResponse
                   placeholder="Response Type"
                   value={customType}
                   onChange={e => setCustomType(e.target.value)}
-                  onKeyDown={e => e.stopPropagation()}
-                  onKeyPress={e => e.stopPropagation()}
-                  onClick={e => e.stopPropagation()}
                   className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
                 />
                 <input
@@ -301,16 +298,10 @@ export function EmailResponseGenerator({ composeElement, apiKey }: EmailResponse
                   placeholder="Description"
                   value={customDescription}
                   onChange={e => setCustomDescription(e.target.value)}
-                  onKeyDown={e => e.stopPropagation()}
-                  onKeyPress={e => e.stopPropagation()}
-                  onClick={e => e.stopPropagation()}
                   className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
                 />
                 <button
-                  onClick={e => {
-                    e.stopPropagation();
-                    handleCustomSubmit();
-                  }}
+                  onClick={handleCustomSubmit}
                   disabled={!customType.trim() || !customDescription.trim()}
                   className="w-full bg-purple-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed">
                   Generate Custom Response

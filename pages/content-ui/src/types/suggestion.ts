@@ -3,4 +3,4 @@ export interface Suggestion {
   style: string;
 }
 
-export type WritingStyle = 'casual' | 'formal' | 'professional' | 'friendly' | 'persuasive';
+export type WritingStyle = 'casual' | 'formal' | 'professional' | 'persuasive';

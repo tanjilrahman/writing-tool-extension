@@ -14,10 +14,9 @@ const geminiStorage = createStorage<string>('gemini-api-key', '', {
 });
 
 const writingStyles: { value: WritingStyle; label: string; description: string }[] = [
-  { value: 'casual', label: 'Casual', description: 'Relaxed, everyday language' },
+  { value: 'casual', label: 'Casual', description: 'Casual, friendly, human like' },
   { value: 'formal', label: 'Formal', description: 'Professional and structured' },
   { value: 'professional', label: 'Professional', description: 'Business-appropriate tone' },
-  { value: 'friendly', label: 'Friendly', description: 'Warm and approachable' },
   { value: 'persuasive', label: 'Persuasive', description: 'Convincing and impactful' },
 ];
 
@@ -41,9 +40,17 @@ export function WritingAssistant() {
 
       // Get the position of the selection
       const rect = range.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const buttonHeight = 40; // Height of our button group
+      const spaceBelow = viewportHeight - (rect.bottom + window.scrollY + buttonHeight);
+
+      // Position above if not enough space below
       const position = {
-        top: rect.bottom + window.scrollY + 10, // 10px padding below selection
-        left: rect.left + window.scrollX,
+        top:
+          spaceBelow < buttonHeight
+            ? rect.top + window.scrollY - buttonHeight - 10 // 10px padding above selection
+            : rect.bottom + window.scrollY + 10, // 10px padding below selection
+        left: Math.max(10, Math.min(rect.left + window.scrollX, window.innerWidth - 100)), // Ensure button is visible
       };
 
       return { text, range, position };
@@ -166,11 +173,25 @@ export function WritingAssistant() {
             <div
               className="fixed bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden"
               style={{
-                top: buttonPosition.top + 40, // Position below the pill button
-                left: buttonPosition.left,
-                zIndex: 9999,
+                top: (() => {
+                  const viewportHeight = window.innerHeight;
+                  const dropdownHeight = 300; // Reduced from 400 to be more compact
+                  const spaceBelow = viewportHeight - buttonPosition.top;
+
+                  // Show above the selection if not enough space below
+                  return spaceBelow < dropdownHeight
+                    ? `${buttonPosition.top - dropdownHeight - 10}px`
+                    : `${buttonPosition.top + 40}px`;
+                })(),
+                left: (() => {
+                  const viewportWidth = window.innerWidth;
+                  const dropdownWidth = 250;
+                  const left = Math.min(buttonPosition.left, viewportWidth - dropdownWidth - 10);
+                  return `${Math.max(10, left)}px`;
+                })(),
                 width: '250px',
-                maxHeight: '400px',
+                maxHeight: '300px', // Reduced from 400px
+                zIndex: 9999,
               }}>
               <div className="p-3 border-b border-gray-200">
                 <div className="flex items-center justify-between">
@@ -231,16 +252,6 @@ export function WritingAssistant() {
                               strokeLinejoin="round"
                               strokeWidth={2}
                               d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                            />
-                          </svg>
-                        )}
-                        {style.value === 'friendly' && (
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
                             />
                           </svg>
                         )}
