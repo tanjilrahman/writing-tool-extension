@@ -48,16 +48,13 @@ const manifest = {
   },
   content_scripts: [
     {
+      matches: ['<all_urls>'],
+      js: ['content-ui/index.iife.js'],
+      css: ['content.css'],
+    },
+    {
       matches: ['*://mail.google.com/*'],
       js: ['content/index.iife.js'],
-    },
-    {
-      matches: ['*://mail.google.com/*'],
-      js: ['content-ui/index.iife.js'],
-    },
-    {
-      matches: ['*://mail.google.com/*'],
-      css: ['content.css'],
     },
   ],
   devtools_page: 'devtools/index.html',
