@@ -2,11 +2,11 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Suggestion, WritingStyle } from '../types/suggestion';
 
 const styles = {
-  casual: 'relaxed, everyday language with contractions and simple words',
-  formal: 'structured, proper language with sophisticated vocabulary',
-  professional: "business-appropriate language that's clear and direct",
-  friendly: 'warm, approachable language with a personal touch',
-  persuasive: 'compelling language that drives action',
+  casual: 'Casual, friendly, human like, everyday language with contractions and simple words',
+  formal: 'Structured, proper, business-appropriate language that is clear and direct',
+  professional: "Business-appropriate language that's clear and direct",
+  friendly: 'Warm, approachable language with a personal touch',
+  persuasive: 'Compelling language that drives action',
 };
 
 export async function analyzeSentence(text: string, apiKey: string, style: WritingStyle): Promise<Suggestion[]> {

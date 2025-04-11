@@ -3,7 +3,6 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 export interface ResponseType {
   type: string;
   description: string;
-  example: string;
 }
 
 export async function analyzeEmailThread(thread: string, apiKey: string): Promise<ResponseType[]> {
@@ -28,8 +27,7 @@ The response must be valid JSON that can be parsed, with this exact structure:
 [
   {
     "type": "brief name of response type",
-    "description": "short description of what this response would entail",
-    "example": "very short example snippet"
+    "description": "short description of what this response would entail"
   }
 ]
 
@@ -66,12 +64,7 @@ ${thread}`;
 
       // Validate each suggestion object
       const validSuggestions = suggestions.filter((suggestion: any) => {
-        return (
-          suggestion &&
-          typeof suggestion.type === 'string' &&
-          typeof suggestion.description === 'string' &&
-          typeof suggestion.example === 'string'
-        );
+        return suggestion && typeof suggestion.type === 'string' && typeof suggestion.description === 'string';
       });
 
       if (validSuggestions.length === 0) {

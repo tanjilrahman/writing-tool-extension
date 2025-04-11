@@ -14,6 +14,11 @@ export function EmailResponseGenerator({ composeElement, apiKey }: EmailResponse
   const [error, setError] = useState<string | null>(null);
   const [generatedResponse, setGeneratedResponse] = useState<string | null>(null);
   const [cardPosition, setCardPosition] = useState<'bottom' | 'top'>('bottom');
+  const [suggestions, setSuggestions] = useState<ResponseType[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showCustomInput, setShowCustomInput] = useState(false);
+  const [customType, setCustomType] = useState('');
+  const [customDescription, setCustomDescription] = useState('');
 
   // Add useEffect to handle card positioning
   useEffect(() => {
@@ -32,6 +37,30 @@ export function EmailResponseGenerator({ composeElement, apiKey }: EmailResponse
       }
     }
   }, [showResponseTypes, generatedResponse, composeElement]);
+
+  const analyzeEmail = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const thread = composeElement.textContent ?? '';
+      if (!apiKey) {
+        throw new Error('API key is required');
+      }
+      const response = await analyzeEmailThread(thread, apiKey);
+      setSuggestions(response);
+      setShowResponseTypes(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to analyze email');
+      console.error('Error analyzing email:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAnalyzeClick = async () => {
+    if (!apiKey) return;
+    await analyzeEmail();
+  };
 
   const getEmailThread = (): string => {
     let thread = '';
@@ -126,27 +155,6 @@ export function EmailResponseGenerator({ composeElement, apiKey }: EmailResponse
     return thread || 'No email thread found';
   };
 
-  const handleAnalyzeClick = async () => {
-    if (!apiKey) return;
-
-    setIsAnalyzing(true);
-    setError(null);
-    setGeneratedResponse(null);
-    try {
-      const thread = getEmailThread();
-      console.log('Analyzing thread:', thread);
-      const types = await analyzeEmailThread(thread, apiKey);
-      console.log('Received response types:', types);
-      setResponseTypes(types);
-      setShowResponseTypes(true);
-    } catch (error) {
-      console.error('Error analyzing email thread:', error);
-      setError(error instanceof Error ? error.message : 'Failed to analyze email thread');
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
-
   const handleGenerateResponse = async (responseType: ResponseType) => {
     if (!apiKey) return;
 
@@ -180,17 +188,30 @@ export function EmailResponseGenerator({ composeElement, apiKey }: EmailResponse
     }
   };
 
+  const handleCustomSubmit = () => {
+    if (customType.trim() && customDescription.trim()) {
+      const customResponse: ResponseType = {
+        type: customType.trim(),
+        description: customDescription.trim(),
+      };
+      handleGenerateResponse(customResponse);
+      setShowCustomInput(false);
+      setCustomType('');
+      setCustomDescription('');
+    }
+  };
+
   return (
     <div className="flex flex-col items-end gap-2">
       <button
         onClick={handleAnalyzeClick}
-        disabled={isAnalyzing || !apiKey}
+        disabled={isLoading || !apiKey}
         className={`p-2 rounded-full shadow-lg transition-all transform ${
           showResponseTypes || generatedResponse
             ? 'bg-purple-600 text-white rotate-180'
             : 'bg-white text-gray-700 hover:bg-gray-50'
         }`}>
-        {isAnalyzing ? (
+        {isLoading ? (
           <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
             <path
@@ -221,24 +242,33 @@ export function EmailResponseGenerator({ composeElement, apiKey }: EmailResponse
               const rect = composeElement.getBoundingClientRect();
               return `${window.innerHeight - rect.top + 12}px`;
             })(),
-            right: '24px',
+            right: '100px',
           }}>
           <div className="p-3 border-b border-gray-200 flex-shrink-0">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-medium text-gray-700">
-                {generatedResponse ? 'Generated Response' : 'Choose Response Type'}
+                {generatedResponse ? 'Generated Response' : 'Smart Replies'}
               </h3>
-              <button
-                onClick={() => {
-                  setShowResponseTypes(false);
-                  setGeneratedResponse(null);
-                  setError(null);
-                }}
-                className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded hover:bg-gray-100">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+              <div className="flex items-center gap-2">
+                {!generatedResponse && (
+                  <button
+                    onClick={() => setShowCustomInput(!showCustomInput)}
+                    className="text-purple-600 hover:text-purple-700 text-sm font-medium">
+                    {showCustomInput ? 'Hide Custom' : 'Custom'}
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    setShowResponseTypes(false);
+                    setGeneratedResponse(null);
+                    setError(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded hover:bg-gray-100">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -254,9 +284,43 @@ export function EmailResponseGenerator({ composeElement, apiKey }: EmailResponse
           )}
 
           <div className="flex-1 overflow-y-auto">
-            {showResponseTypes && responseTypes.length > 0 && (
+            {showCustomInput && !generatedResponse && (
+              <div className="p-3 border-b border-gray-100">
+                <input
+                  type="text"
+                  placeholder="Response Type"
+                  value={customType}
+                  onChange={e => setCustomType(e.target.value)}
+                  onKeyDown={e => e.stopPropagation()}
+                  onKeyPress={e => e.stopPropagation()}
+                  onClick={e => e.stopPropagation()}
+                  className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
+                />
+                <input
+                  type="text"
+                  placeholder="Description"
+                  value={customDescription}
+                  onChange={e => setCustomDescription(e.target.value)}
+                  onKeyDown={e => e.stopPropagation()}
+                  onKeyPress={e => e.stopPropagation()}
+                  onClick={e => e.stopPropagation()}
+                  className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
+                />
+                <button
+                  onClick={e => {
+                    e.stopPropagation();
+                    handleCustomSubmit();
+                  }}
+                  disabled={!customType.trim() || !customDescription.trim()}
+                  className="w-full bg-purple-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                  Generate Custom Response
+                </button>
+              </div>
+            )}
+
+            {showResponseTypes && !generatedResponse && (
               <div className="divide-y divide-gray-100">
-                {responseTypes.map((type, index) => (
+                {[...suggestions, ...responseTypes].map((type, index) => (
                   <button
                     key={index}
                     onClick={() => handleGenerateResponse(type)}
@@ -308,7 +372,6 @@ export function EmailResponseGenerator({ composeElement, apiKey }: EmailResponse
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-sm text-gray-800 truncate">{type.type}</div>
                         <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{type.description}</p>
-                        <div className="text-xs text-gray-400 italic mt-1 truncate">{type.example}</div>
                       </div>
                       {isGenerating && (
                         <div className="flex-shrink-0">
@@ -355,6 +418,12 @@ export function EmailResponseGenerator({ composeElement, apiKey }: EmailResponse
               </button>
             </div>
           )}
+        </div>
+      )}
+
+      {error && !showResponseTypes && !generatedResponse && (
+        <div className="fixed bottom-4 right-4 bg-red-50 rounded-lg shadow-lg p-4 max-w-md">
+          <div className="text-red-600 text-sm">{error}</div>
         </div>
       )}
     </div>
