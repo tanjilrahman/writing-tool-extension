@@ -7,9 +7,15 @@ const styles = {
     'Proofread the text for any errors and make sure it is grammatically correct. Do not change the meaning of the text.',
   professional: "Business-appropriate language that's clear and direct",
   persuasive: 'Compelling language that drives action',
+  freestyle: '', // Custom instructions will be provided at runtime
 };
 
-export async function analyzeSentence(text: string, apiKey: string, style: WritingStyle): Promise<Suggestion[]> {
+export async function analyzeSentence(
+  text: string,
+  apiKey: string,
+  style: WritingStyle,
+  customInstruction?: string,
+): Promise<Suggestion[]> {
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
@@ -23,8 +29,20 @@ export async function analyzeSentence(text: string, apiKey: string, style: Writi
     });
 
     const basePrompt =
-      style === 'proofread'
-        ? `You are a professional proofreader. Review the text for grammar, spelling, and punctuation errors only.
+      style === 'freestyle'
+        ? `You are a helpful writing assistant. The user has provided some text and instructions for how to help with it.
+         
+         Instructions: ${customInstruction}
+         
+         Text: "${text}"
+         
+         Provide a response that follows the user's instructions. Return ONLY a JSON array with a single object using this structure:
+         {
+           "rewrite": "your response",
+           "style": "freestyle"
+         }`
+        : style === 'proofread'
+          ? `You are a professional proofreader. Review the text for grammar, spelling, and punctuation errors only.
          Make minimal changes to fix these errors while preserving the exact meaning, tone, and style of the original text.
          If the text is already correct, return it unchanged.
          Return ONLY a JSON array with a single object using this structure:
@@ -34,7 +52,7 @@ export async function analyzeSentence(text: string, apiKey: string, style: Writi
          }
          
          Text to proofread: "${text}"`
-        : `You are a professional writing assistant. Your task is to improve the given text by making it more ${styles[style]}. 
+          : `You are a professional writing assistant. Your task is to improve the given text by making it more ${styles[style]}. 
          
          Provide 3 alternative versions that maintain the core message but improve clarity and impact. Return ONLY a JSON array of objects with the following structure:
          {

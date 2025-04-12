@@ -6,6 +6,7 @@ interface SuggestionPopupProps {
   targetElement: HTMLElement;
   onApplySuggestion: (original: string, replacement: string) => void;
   selectedStyle?: string;
+  position: { top: number; left: number } | null;
 }
 
 export function SuggestionPopup({
@@ -13,16 +14,13 @@ export function SuggestionPopup({
   targetElement,
   onApplySuggestion,
   selectedStyle,
+  position,
 }: SuggestionPopupProps) {
-  const [position, setPosition] = useState(() => {
-    // Set initial position based on current selection
-    const selection = window.getSelection();
-    if (selection && selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0);
-      const rect = range.getBoundingClientRect();
+  const [popupPosition, setPopupPosition] = useState(() => {
+    if (position) {
       return {
-        top: rect.bottom + window.scrollY + 10,
-        left: rect.left + window.scrollX,
+        top: position.top + 40, // Position below the button
+        left: position.left,
         opacity: 0, // Start invisible for smooth fade in
       };
     }
@@ -53,19 +51,14 @@ export function SuggestionPopup({
 
   useEffect(() => {
     const updatePosition = () => {
-      if (!popupRef.current) return;
+      if (!popupRef.current || !position) return;
 
-      const selection = window.getSelection();
-      if (!selection || selection.rangeCount === 0) return;
-
-      const range = selection.getRangeAt(0);
-      const rect = range.getBoundingClientRect();
       const popup = popupRef.current.getBoundingClientRect();
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
 
-      let top = rect.bottom + window.scrollY + 10;
-      let left = rect.left + window.scrollX;
+      let top = position.top + 40; // Position below the button
+      let left = position.left;
 
       if (left + popup.width > viewportWidth) {
         left = viewportWidth - popup.width - 20;
@@ -76,14 +69,10 @@ export function SuggestionPopup({
       }
 
       if (top + popup.height > window.scrollY + viewportHeight) {
-        if (rect.top > popup.height + 10) {
-          top = rect.top + window.scrollY - popup.height - 10;
-        } else {
-          top = window.scrollY + viewportHeight - popup.height - 20;
-        }
+        top = position.top - popup.height - 10; // Position above the button
       }
 
-      setPosition({ top, left, opacity: 1 });
+      setPopupPosition({ top, left, opacity: 1 });
       setIsPositioned(true);
     };
 
@@ -93,16 +82,14 @@ export function SuggestionPopup({
 
     window.addEventListener('scroll', updatePosition);
     window.addEventListener('resize', updatePosition);
-    document.addEventListener('selectionchange', updatePosition);
 
     return () => {
       window.removeEventListener('scroll', updatePosition);
       window.removeEventListener('resize', updatePosition);
-      document.removeEventListener('selectionchange', updatePosition);
     };
-  }, []);
+  }, [position]);
 
-  if (suggestions.length === 0) return null;
+  if (suggestions.length === 0 || !position) return null;
 
   const currentSuggestion = suggestions[currentIndex];
 
@@ -111,9 +98,9 @@ export function SuggestionPopup({
       ref={popupRef}
       className="fixed bg-white rounded-lg shadow-lg p-4 w-[400px] z-[9999] border border-gray-200"
       style={{
-        top: `${position.top}px`,
-        left: `${position.left}px`,
-        opacity: position.opacity,
+        top: `${popupPosition.top}px`,
+        left: `${popupPosition.left}px`,
+        opacity: popupPosition.opacity,
         transition: 'opacity 0.2s ease-out, top 0.2s ease-out, left 0.2s ease-out',
         visibility: isPositioned ? 'visible' : 'hidden',
       }}>
