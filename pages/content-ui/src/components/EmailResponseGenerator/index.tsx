@@ -19,6 +19,16 @@ export function EmailResponseGenerator({ composeElement, apiKey }: EmailResponse
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [customType, setCustomType] = useState('');
   const [customDescription, setCustomDescription] = useState('');
+  const [selectedStyle, setSelectedStyle] = useState<string>('professional');
+  const [showStyleSelector, setShowStyleSelector] = useState(false);
+
+  const emailStyles = [
+    { value: 'professional', label: 'Professional', description: 'Business-appropriate formal tone' },
+    { value: 'friendly', label: 'Friendly', description: 'Warm and approachable tone' },
+    { value: 'casual', label: 'Casual', description: 'Casual, friendly, human like' },
+    { value: 'concise', label: 'Concise', description: 'Brief and to-the-point' },
+    { value: 'detailed', label: 'Detailed', description: 'Comprehensive and thorough' },
+  ];
 
   // Add useEffect to handle card positioning
   useEffect(() => {
@@ -163,7 +173,11 @@ export function EmailResponseGenerator({ composeElement, apiKey }: EmailResponse
     try {
       const thread = getEmailThread();
       console.log('Generating response for type:', responseType.type);
-      const response = await generateEmailResponse(thread, responseType, apiKey);
+      const enhancedResponseType = {
+        ...responseType,
+        style: selectedStyle,
+      };
+      const response = await generateEmailResponse(thread, enhancedResponseType, apiKey);
       console.log('Received generated response:', response);
 
       // Store the generated response to show in popup
@@ -180,11 +194,32 @@ export function EmailResponseGenerator({ composeElement, apiKey }: EmailResponse
   const handleCopyToClipboard = async () => {
     if (!generatedResponse) return;
     try {
-      await navigator.clipboard.writeText(generatedResponse);
+      // Create a temporary div to handle HTML content
+      const tempDiv = document.createElement('div');
+      // Clean up any potential code block markers and extra whitespace
+      const cleanHtml = generatedResponse.replace(/```html\n?|\n?```/g, '').trim();
+
+      tempDiv.innerHTML = cleanHtml;
+
+      // Try to copy as rich text first
+      const clipboardItem = new ClipboardItem({
+        'text/html': new Blob([cleanHtml], { type: 'text/html' }),
+        'text/plain': new Blob([tempDiv.innerText], { type: 'text/plain' }),
+      });
+
+      await navigator.clipboard.write([clipboardItem]);
       setError('Response copied to clipboard!');
     } catch (error) {
-      console.error('Error copying to clipboard:', error);
-      setError('Failed to copy to clipboard');
+      // Fallback to plain text if rich text copy fails
+      try {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = generatedResponse;
+        await navigator.clipboard.writeText(tempDiv.innerText);
+        setError('Response copied to clipboard!');
+      } catch (fallbackError) {
+        console.error('Error copying to clipboard:', fallbackError);
+        setError('Failed to copy to clipboard');
+      }
     }
   };
 
@@ -235,7 +270,7 @@ export function EmailResponseGenerator({ composeElement, apiKey }: EmailResponse
         <div
           className="fixed bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden flex flex-col"
           style={{
-            width: '300px',
+            width: '350px',
             maxHeight: '400px',
             zIndex: 9999,
             bottom: (() => {
@@ -251,11 +286,26 @@ export function EmailResponseGenerator({ composeElement, apiKey }: EmailResponse
               </h3>
               <div className="flex items-center gap-2">
                 {!generatedResponse && (
-                  <button
-                    onClick={() => setShowCustomInput(!showCustomInput)}
-                    className="text-purple-600 hover:text-purple-700 text-sm font-medium">
-                    {showCustomInput ? 'Hide Custom' : 'Custom'}
-                  </button>
+                  <>
+                    <button
+                      onClick={() => setShowStyleSelector(!showStyleSelector)}
+                      className="text-purple-600 hover:text-purple-700 text-sm font-medium flex items-center gap-1">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"
+                        />
+                      </svg>
+                      {selectedStyle.charAt(0).toUpperCase() + selectedStyle.slice(1)}
+                    </button>
+                    <button
+                      onClick={() => setShowCustomInput(!showCustomInput)}
+                      className="text-purple-600 hover:text-purple-700 text-sm font-medium">
+                      {showCustomInput ? 'Hide Custom' : 'Custom'}
+                    </button>
+                  </>
                 )}
                 <button
                   onClick={() => {
@@ -306,6 +356,78 @@ export function EmailResponseGenerator({ composeElement, apiKey }: EmailResponse
                   className="w-full bg-purple-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed">
                   Generate Custom Response
                 </button>
+              </div>
+            )}
+            {showStyleSelector && !generatedResponse && (
+              <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
+                <div className="flex items-center justify-between gap-1">
+                  {emailStyles.map(style => (
+                    <button
+                      key={style.value}
+                      onClick={() => {
+                        setSelectedStyle(style.value);
+                        setShowStyleSelector(false);
+                      }}
+                      title={style.description}
+                      className={`p-1.5 rounded-md transition-colors flex flex-col items-center text-[10px] min-w-[48px] ${
+                        selectedStyle === style.value
+                          ? 'bg-purple-100 text-purple-700'
+                          : 'text-gray-700 hover:bg-gray-100'
+                      }`}>
+                      {style.value === 'professional' && (
+                        <svg className="w-4 h-4 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                          />
+                        </svg>
+                      )}
+                      {style.value === 'friendly' && (
+                        <svg className="w-4 h-4 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      )}
+                      {style.value === 'casual' && (
+                        <svg className="w-4 h-4 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      )}
+                      {style.value === 'concise' && (
+                        <svg className="w-4 h-4 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13 10V3L4 14h7v7l9-11h-7z"
+                          />
+                        </svg>
+                      )}
+                      {style.value === 'detailed' && (
+                        <svg className="w-4 h-4 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          />
+                        </svg>
+                      )}
+                      <span>{style.value.charAt(0).toUpperCase() + style.value.slice(1)}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -388,7 +510,21 @@ export function EmailResponseGenerator({ composeElement, apiKey }: EmailResponse
             )}
 
             {generatedResponse && (
-              <div className="p-3 whitespace-pre-wrap text-sm text-gray-700">{generatedResponse}</div>
+              <div
+                className="p-3 text-sm text-gray-700 email-content"
+                dangerouslySetInnerHTML={{
+                  __html: generatedResponse
+                    .replace(/```html\n?|\n?```/g, '')
+                    .trim()
+                    // Sanitize the HTML to only allow specific tags
+                    .replace(/<(?!\/?(b|i|ul|li|br|p)(?=>|\s.*>))\/?(?:.|\s)*?>/g, '')
+                    // Add some spacing for lists
+                    .replace(/<ul>/g, '<ul class="list-disc pl-4 my-2">')
+                    .replace(/<li>/g, '<li class="mb-1">')
+                    // Add spacing for paragraphs
+                    .replace(/<p>/g, '<p class="mb-3">'),
+                }}
+              />
             )}
           </div>
 

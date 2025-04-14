@@ -3,6 +3,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 export interface ResponseType {
   type: string;
   description: string;
+  style?: string;
 }
 
 export async function analyzeEmailThread(thread: string, apiKey: string): Promise<ResponseType[]> {
@@ -101,18 +102,41 @@ export async function generateEmailResponse(
       },
     });
 
+    const styleInstructions = {
+      professional: 'Use a formal and business-appropriate tone. Be polite and maintain professional distance.',
+      casual: 'Casual, friendly, human like, everyday language with contractions and simple words',
+      friendly: 'Use a warm and approachable tone. Be personable while maintaining professionalism.',
+      concise: 'Be brief and to-the-point. Focus on essential information without unnecessary details.',
+      detailed: 'Provide comprehensive information. Include relevant details and thorough explanations.',
+    }[responseType.style || 'professional'];
+
     const prompt = `You are an email assistant. Generate a response to the following email thread. The response should be a ${responseType.type} type response, which means: ${responseType.description}
 
-    Keep the response professional, relevant, and maintain appropriate tone based on the conversation history.
+    Style Instructions: ${styleInstructions}
+
+    Keep the response relevant and maintain appropriate tone based on the conversation history.
+    
+    Format the response in clean HTML without any markdown or code blocks. Use these HTML tags:
+    - <p> for paragraphs
+    - <b> for important points or emphasis
+    - <i> for subtle emphasis or terms
+    - <ul> and <li> for lists
+    - <br> for line breaks
+
+    Note: Do not add signatures.
 
     Email thread:
     ${thread}
 
-    Generate ONLY the response text, without any explanation, without any formatting (no bold, no italic, no code blocks).`;
+    Return ONLY the formatted HTML response without any code blocks or backticks.`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
-    return response.text().trim();
+    // Clean up any potential code block markers
+    return response
+      .text()
+      .trim()
+      .replace(/```html\n?|\n?```/g, '');
   } catch (error) {
     console.error('Error generating email response:', error);
     throw error;
