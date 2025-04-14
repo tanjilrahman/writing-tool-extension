@@ -204,7 +204,7 @@ export function WritingAssistant() {
                 })(),
                 left: (() => {
                   const viewportWidth = window.innerWidth;
-                  const dropdownWidth = 320;
+                  const dropdownWidth = 280;
                   const spaceRight = viewportWidth - buttonPosition.left;
 
                   return spaceRight < dropdownWidth
@@ -212,11 +212,11 @@ export function WritingAssistant() {
                     : `${buttonPosition.left}px`;
                 })(),
                 width: 'auto',
-                minWidth: '320px',
+                minWidth: '280px',
                 zIndex: 9999,
               }}>
-              <div className="p-2">
-                <div className="flex items-center gap-2">
+              <div className="p-1.5">
+                <div className="flex items-center justify-between gap-1">
                   {writingStyles.map(style => (
                     <button
                       key={style.value}
@@ -241,80 +241,91 @@ export function WritingAssistant() {
                                 setSuggestions([]);
                               })
                               .finally(() => {
+                                setIsTextareaFocused(false);
                                 setIsAnalyzing(false);
+                                setShowStyleSelector(false);
+                                setShowCustomInput(false);
                               });
                           }
                         }
                       }}
-                      title={`${style.label}: ${style.description}`}
-                      className={`p-2 rounded-md transition-colors ${
+                      title={style.description}
+                      className={`p-1.5 rounded-md transition-colors flex flex-col items-center text-[10px] min-w-[48px] ${
                         selectedStyle === style.value
                           ? 'bg-purple-100 text-purple-700'
                           : 'text-gray-700 hover:bg-gray-50'
                       }`}>
                       {style.value === 'casual' && (
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
+                        <>
+                          <svg className="w-4 h-4 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                          <span>Casual</span>
+                        </>
                       )}
                       {style.value === 'proofread' && (
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                          />
-                        </svg>
+                        <>
+                          <svg className="w-4 h-4 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            />
+                          </svg>
+                          <span>Proofread</span>
+                        </>
                       )}
                       {style.value === 'professional' && (
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                          />
-                        </svg>
+                        <>
+                          <svg className="w-4 h-4 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                            />
+                          </svg>
+                          <span>Professional</span>
+                        </>
                       )}
                       {style.value === 'persuasive' && (
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"
-                          />
-                        </svg>
+                        <>
+                          <svg className="w-4 h-4 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"
+                            />
+                          </svg>
+                          <span>Persuade</span>
+                        </>
                       )}
                       {style.value === 'freestyle' && (
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                          />
-                        </svg>
+                        <>
+                          <svg className="w-4 h-4 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                            />
+                          </svg>
+                          <span>FreeStyle</span>
+                        </>
                       )}
                     </button>
                   ))}
-                  <button
-                    onClick={() => setShowStyleSelector(false)}
-                    className="p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
                 </div>
 
                 {showCustomInput && selectedStyle === 'freestyle' && (
-                  <div className="mt-2 p-3 bg-gray-50 rounded-lg">
+                  <div className="mt-2 bg-gray-50 rounded-lg">
                     <textarea
                       placeholder="Enter your instructions..."
                       value={customInstruction}
@@ -345,48 +356,8 @@ export function WritingAssistant() {
                           }
                         }
                       }}
-                      className="w-full h-24 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500 resize-none"
+                      className="w-full h-16 px-3 py-2 text-xs text-gray-700 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500 resize-none"
                     />
-                    <div className="flex gap-2 mt-2">
-                      <button
-                        onClick={e => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setShowStyleSelector(false);
-                          setShowCustomInput(false);
-                          setCustomInstruction('');
-                        }}
-                        className="flex-1 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors">
-                        Cancel
-                      </button>
-                      <button
-                        onClick={e => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          if (selectedText && customInstruction.trim()) {
-                            setIsAnalyzing(true);
-                            analyzeSentence(selectedText, apiKey!, 'freestyle', customInstruction)
-                              .then(analysis => {
-                                if (analysis && analysis.length > 0) {
-                                  setSuggestions(analysis);
-                                }
-                              })
-                              .catch(error => {
-                                console.error('Error analyzing text:', error);
-                                setSuggestions([]);
-                              })
-                              .finally(() => {
-                                setIsAnalyzing(false);
-                                setShowStyleSelector(false);
-                                setShowCustomInput(false);
-                              });
-                          }
-                        }}
-                        disabled={!customInstruction.trim()}
-                        className="flex-1 px-3 py-1.5 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50 transition-colors">
-                        Apply
-                      </button>
-                    </div>
                   </div>
                 )}
               </div>
