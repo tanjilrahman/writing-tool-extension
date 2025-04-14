@@ -182,7 +182,9 @@ export function WritingAssistant() {
               setShowStyleSelector(!showStyleSelector);
             }}
             className={`p-1 rounded-full transition-colors ${
-              showStyleSelector ? 'bg-purple-100 text-purple-700' : 'text-gray-700 hover:bg-gray-50'
+              showStyleSelector || selectedStyle !== 'casual'
+                ? 'bg-purple-100 text-purple-700'
+                : 'text-gray-700 hover:bg-gray-50'
             }`}>
             {isAnalyzing ? (
               <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
