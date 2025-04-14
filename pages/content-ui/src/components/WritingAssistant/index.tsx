@@ -36,8 +36,30 @@ export function WritingAssistant() {
   const [customInstruction, setCustomInstruction] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [isTextareaFocused, setIsTextareaFocused] = useState(false);
+  const [savedRange, setSavedRange] = useState<Range | null>(null);
 
-  const getSelectedText = (): { text: string; range: Range | null; position: { top: number; left: number } | null } => {
+  const saveSelection = useCallback(() => {
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      setSavedRange(selection.getRangeAt(0).cloneRange());
+    }
+  }, []);
+
+  const restoreSelection = useCallback(() => {
+    if (savedRange) {
+      const selection = window.getSelection();
+      if (selection) {
+        selection.removeAllRanges();
+        selection.addRange(savedRange);
+      }
+    }
+  }, [savedRange]);
+
+  const getSelectedText = useCallback((): {
+    text: string;
+    range: Range | null;
+    position: { top: number; left: number } | null;
+  } => {
     const selection = window.getSelection();
     if (selection && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
@@ -58,10 +80,13 @@ export function WritingAssistant() {
         left: Math.max(10, Math.min(rect.left + window.scrollX, window.innerWidth - 100)), // Ensure button is visible
       };
 
+      // Save the range when getting selected text
+      setSavedRange(range.cloneRange());
+
       return { text, range, position };
     }
     return { text: '', range: null, position: null };
-  };
+  }, []);
 
   const analyzeText = useCallback(async () => {
     if (!selectedText || isAnalyzing || !apiKey) return;
@@ -150,6 +175,7 @@ export function WritingAssistant() {
             padding: '2px',
           }}>
           <button
+            onMouseDown={e => e.preventDefault()}
             onClick={e => {
               e.preventDefault();
               e.stopPropagation();
@@ -179,6 +205,7 @@ export function WritingAssistant() {
           </button>
 
           <button
+            onMouseDown={e => e.preventDefault()}
             onClick={handleButtonClick}
             disabled={!selectedText.trim() || isAnalyzing}
             className="p-1 rounded-full bg-purple-600 hover:bg-purple-700 text-white transition-colors disabled:opacity-50">
@@ -220,6 +247,7 @@ export function WritingAssistant() {
                   {writingStyles.map(style => (
                     <button
                       key={style.value}
+                      onMouseDown={e => e.preventDefault()}
                       onClick={e => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -229,6 +257,7 @@ export function WritingAssistant() {
                         } else {
                           setShowStyleSelector(false);
                           if (selectedText) {
+                            restoreSelection();
                             setIsAnalyzing(true);
                             analyzeSentence(selectedText, apiKey!, style.value, customInstruction)
                               .then(analysis => {
@@ -336,6 +365,7 @@ export function WritingAssistant() {
                         if (e.key === 'Enter' && !e.shiftKey) {
                           e.preventDefault();
                           if (selectedText && customInstruction.trim()) {
+                            restoreSelection();
                             setIsAnalyzing(true);
                             analyzeSentence(selectedText, apiKey!, 'freestyle', customInstruction)
                               .then(analysis => {
@@ -373,15 +403,17 @@ export function WritingAssistant() {
           selectedStyle={selectedStyle}
           position={buttonPosition}
           onApplySuggestion={(original, replacement) => {
-            if (selectionRange) {
-              selectionRange.deleteContents();
-              selectionRange.insertNode(document.createTextNode(replacement));
+            if (savedRange) {
+              restoreSelection();
+              savedRange.deleteContents();
+              savedRange.insertNode(document.createTextNode(replacement));
               setText('');
               setSelectedText('');
               setSuggestions([]);
               setSelectionRange(null);
               setButtonPosition(null);
               setShowStyleSelector(false);
+              setSavedRange(null);
             }
           }}
         />
