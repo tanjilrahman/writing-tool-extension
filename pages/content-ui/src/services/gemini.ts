@@ -28,35 +28,53 @@ export async function analyzeSentence(
       },
     });
 
+    const formatInstructions = `
+    Format the response in clean HTML without any markdown or code blocks. Use these HTML tags:
+    - <p> for paragraphs
+    - <b> for important points or emphasis
+    - <i> for subtle emphasis or terms
+    - <ul> and <li> for lists
+    
+    Note: Do not add signatures.`;
+
     const basePrompt =
       style === 'freestyle'
         ? `You are a helpful writing assistant. The user has provided some text and instructions for how to help with it.
          
          Instructions: ${customInstruction}
          
+         ${formatInstructions}
+         
          Text: "${text}"
          
          Provide a response that follows the user's instructions. Return ONLY a JSON array with a single object using this structure:
          {
-           "rewrite": "your response",
+           "rewrite": "your HTML formatted response",
            "style": "freestyle"
          }`
         : style === 'proofread'
           ? `You are a professional proofreader. Review the text for grammar, spelling, and punctuation errors only.
          Make minimal changes to fix these errors while preserving the exact meaning, tone, and style of the original text.
          If the text is already correct, return it unchanged.
-         Return ONLY a JSON array with a single object using this structure:
-         {
-           "rewrite": "the corrected version",
-           "style": "proofread"
-         }
+         
+         ${formatInstructions}
+         
+         Return ONLY a JSON array with this structure:
+         [
+           {
+             "rewrite": "the HTML formatted corrected version",
+             "style": "proofread"
+           }
+         ]
          
          Text to proofread: "${text}"`
           : `You are a professional writing assistant. Your task is to improve the given text by making it more ${styles[style]}. 
          
+         ${formatInstructions}
+         
          Provide 3 alternative versions that maintain the core message but improve clarity and impact. Return ONLY a JSON array of objects with the following structure:
          {
-           "rewrite": "the improved version",
+           "rewrite": "the HTML formatted improved version",
            "style": "${style}"
          }
          
@@ -80,16 +98,26 @@ export async function analyzeSentence(
     try {
       const suggestions = JSON.parse(responseText);
 
-      // Validate the response structure
-      if (!Array.isArray(suggestions)) {
-        console.error('Response is not an array:', responseText);
-        throw new Error('Invalid response format - not an array');
-      }
+      // If it's a single object for proofread, convert it to an array
+      const suggestionsArray = Array.isArray(suggestions) ? suggestions : [suggestions];
 
-      // Validate each suggestion object
-      const validSuggestions = suggestions.filter((suggestion: any) => {
-        return suggestion && typeof suggestion.rewrite === 'string' && typeof suggestion.style === 'string';
-      });
+      // Validate each suggestion object and clean up HTML
+      const validSuggestions = suggestionsArray
+        .filter((suggestion: any) => {
+          return suggestion && typeof suggestion.rewrite === 'string' && typeof suggestion.style === 'string';
+        })
+        .map((suggestion: any) => ({
+          ...suggestion,
+          rewrite: suggestion.rewrite
+            .trim()
+            // Sanitize the HTML to only allow specific tags
+            .replace(/<(?!\/?(b|i|ul|li|p)(?=>|\s.*>))\/?(?:.|\s)*?>/g, '')
+            // Add some spacing for lists
+            .replace(/<ul>/g, '<ul class="list-disc pl-4 my-2">')
+            .replace(/<li>/g, '<li class="mb-1">')
+            // Add spacing for paragraphs
+            .replace(/<p>/g, '<p class="mb-3">'),
+        }));
 
       if (validSuggestions.length === 0) {
         console.error('No valid suggestions found in response:', responseText);

@@ -336,26 +336,37 @@ export function EmailResponseGenerator({ composeElement, apiKey }: EmailResponse
           <div className="flex-1 overflow-y-auto">
             {showCustomInput && !generatedResponse && (
               <div className="p-3 border-b border-gray-100">
-                <input
-                  type="text"
-                  placeholder="Response Type"
-                  value={customType}
-                  onChange={e => setCustomType(e.target.value)}
-                  className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
-                />
-                <input
-                  type="text"
-                  placeholder="Description"
-                  value={customDescription}
-                  onChange={e => setCustomDescription(e.target.value)}
-                  className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
-                />
-                <button
-                  onClick={handleCustomSubmit}
-                  disabled={!customType.trim() || !customDescription.trim()}
-                  className="w-full bg-purple-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed">
-                  Generate Custom Response
-                </button>
+                <div className="flex flex-col gap-2">
+                  <input
+                    type="text"
+                    placeholder="Response Type"
+                    value={customType}
+                    onChange={e => setCustomType(e.target.value)}
+                    onMouseDown={e => e.stopPropagation()}
+                    onClick={e => e.stopPropagation()}
+                    onKeyDown={e => e.stopPropagation()}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  />
+                  <textarea
+                    placeholder="Description"
+                    value={customDescription}
+                    onChange={e => setCustomDescription(e.target.value)}
+                    onMouseDown={e => e.stopPropagation()}
+                    onClick={e => e.stopPropagation()}
+                    onKeyDown={e => e.stopPropagation()}
+                    rows={2}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-purple-500 resize-none"
+                  />
+                  <button
+                    onClick={e => {
+                      e.stopPropagation();
+                      handleCustomSubmit();
+                    }}
+                    disabled={!customType.trim() || !customDescription.trim()}
+                    className="w-full bg-purple-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Generate Custom Response
+                  </button>
+                </div>
               </div>
             )}
             {showStyleSelector && !generatedResponse && (

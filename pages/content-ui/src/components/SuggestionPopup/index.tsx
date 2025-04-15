@@ -104,8 +104,8 @@ export function SuggestionPopup({
         transition: 'opacity 0.2s ease-out, top 0.2s ease-out, left 0.2s ease-out',
         visibility: isPositioned ? 'visible' : 'hidden',
       }}>
-      <div className="flex flex-col">
-        <div className="flex items-center justify-between mb-3">
+      <div className="flex flex-col h-full">
+        <div className="flex items-center justify-between mb-3 flex-shrink-0">
           <span className="text-sm font-medium text-gray-700">
             {selectedStyle ? selectedStyle.charAt(0).toUpperCase() + selectedStyle.slice(1) : 'Improve clarity'}
           </span>
@@ -114,17 +114,65 @@ export function SuggestionPopup({
           </span>
         </div>
 
-        <div className="relative">
-          <div className="p-3 bg-gray-50 rounded-md min-h-[80px]">
-            <p className="text-sm text-gray-800">{currentSuggestion.rewrite}</p>
+        <div className="relative flex-1 min-h-0">
+          <div className="p-3 bg-gray-50 rounded-md max-h-[300px] overflow-y-auto">
+            <div
+              className="text-sm text-gray-800 suggestion-content"
+              dangerouslySetInnerHTML={{
+                __html: currentSuggestion.rewrite
+                  .trim()
+                  // Sanitize the HTML to only allow specific tags
+                  .replace(/<(?!\/?(b|i|ul|li|br|p)(?=>|\s.*>))\/?(?:.|\s)*?>/g, '')
+                  // Add some spacing for lists
+                  .replace(/<ul>/g, '<ul class="list-disc pl-4 my-2">')
+                  .replace(/<li>/g, '<li class="mb-1">')
+                  // Add spacing for paragraphs
+                  .replace(/<p>/g, '<p class="mb-3">'),
+              }}
+            />
           </div>
         </div>
 
-        <div className="flex items-center justify-between mt-3">
+        <div className="flex items-center justify-between mt-3 flex-shrink-0">
           <div className="flex items-center gap-2">
             <button
               className="text-sm text-gray-500 hover:text-gray-700 px-2 py-1 rounded transition-colors flex items-center gap-1"
-              onClick={() => onApplySuggestion('', currentSuggestion.rewrite)}>
+              onMouseDown={e => {
+                e.preventDefault(); // Prevent focus change
+                e.stopPropagation(); // Prevent event bubbling
+              }}
+              onClick={e => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Create a temporary div to handle HTML content
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = currentSuggestion.rewrite
+                  .trim()
+                  // Sanitize the HTML to only allow specific tags
+                  .replace(/<(?!\/?(b|i|ul|li|br|p)(?=>|\s.*>))\/?(?:.|\s)*?>/g, '')
+                  // Add some spacing for lists
+                  .replace(/<ul>/g, '<ul class="list-disc pl-4 my-2">')
+                  .replace(/<li>/g, '<li class="mb-1">')
+                  // Add spacing for paragraphs
+                  .replace(/<p>/g, '<p class="mb-3">');
+
+                // First replace the text synchronously
+                const plainText = tempDiv.innerText;
+                onApplySuggestion('', plainText);
+
+                // Then try to write to clipboard as rich text
+                try {
+                  const clipboardItem = new ClipboardItem({
+                    'text/html': new Blob([tempDiv.innerHTML], { type: 'text/html' }),
+                    'text/plain': new Blob([plainText], { type: 'text/plain' }),
+                  });
+                  navigator.clipboard.write([clipboardItem]).catch(console.error);
+                } catch (error) {
+                  // If rich text fails, just ignore since we already did the replacement
+                  console.error('Rich text clipboard write failed:', error);
+                }
+              }}>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
@@ -132,7 +180,49 @@ export function SuggestionPopup({
             </button>
             <button
               className="text-sm text-gray-500 hover:text-gray-700 px-2 py-1 rounded transition-colors flex items-center gap-1"
-              onClick={handleCopy}>
+              onMouseDown={e => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onClick={async e => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Create a temporary div to handle HTML content
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = currentSuggestion.rewrite
+                  .trim()
+                  // Sanitize the HTML to only allow specific tags
+                  .replace(/<(?!\/?(b|i|ul|li|br|p)(?=>|\s.*>))\/?(?:.|\s)*?>/g, '')
+                  // Add some spacing for lists
+                  .replace(/<ul>/g, '<ul class="list-disc pl-4 my-2">')
+                  .replace(/<li>/g, '<li class="mb-1">')
+                  // Add spacing for paragraphs
+                  .replace(/<p>/g, '<p class="mb-3">');
+
+                const plainText = tempDiv.innerText;
+
+                try {
+                  // Try to copy as rich text first
+                  const clipboardItem = new ClipboardItem({
+                    'text/html': new Blob([tempDiv.innerHTML], { type: 'text/html' }),
+                    'text/plain': new Blob([plainText], { type: 'text/plain' }),
+                  });
+
+                  await navigator.clipboard.write([clipboardItem]);
+                  setCopySuccess(true);
+                  setTimeout(() => setCopySuccess(false), 2000);
+                } catch (error) {
+                  // Fallback to plain text if rich text copy fails
+                  try {
+                    await navigator.clipboard.writeText(plainText);
+                    setCopySuccess(true);
+                    setTimeout(() => setCopySuccess(false), 2000);
+                  } catch (fallbackError) {
+                    console.error('Error copying to clipboard:', fallbackError);
+                  }
+                }
+              }}>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
