@@ -226,7 +226,19 @@ export function WritingAssistant() {
                   const dropdownHeight = showCustomInput ? 200 : 64;
                   const spaceBelow = viewportHeight - buttonPosition.top;
                   const spaceAbove = buttonPosition.top;
+                  const suggestionPopupHeight = 300; // Approximate height of suggestion popup
 
+                  // If suggestions are showing, check their position
+                  if (suggestions.length > 0) {
+                    // If suggestions are below (default), put style selector above
+                    if (spaceBelow >= suggestionPopupHeight) {
+                      return `${buttonPosition.top - dropdownHeight - 10}px`;
+                    }
+                    // If suggestions are above, put style selector below
+                    return `${buttonPosition.top + 40}px`;
+                  }
+
+                  // If no suggestions, use default logic
                   return spaceBelow < dropdownHeight && spaceAbove > spaceBelow
                     ? `${buttonPosition.top - dropdownHeight - 10}px`
                     : `${buttonPosition.top + 40}px`;

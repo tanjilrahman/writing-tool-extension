@@ -237,14 +237,30 @@ export function SuggestionPopup({
 
           <div className="flex items-center gap-1">
             <button
-              onClick={prevSuggestion}
+              onMouseDown={e => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onClick={e => {
+                e.preventDefault();
+                e.stopPropagation();
+                prevSuggestion();
+              }}
               className="w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-gray-50 transition-colors">
               <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
             <button
-              onClick={nextSuggestion}
+              onMouseDown={e => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onClick={e => {
+                e.preventDefault();
+                e.stopPropagation();
+                nextSuggestion();
+              }}
               className="w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-gray-50 transition-colors">
               <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
